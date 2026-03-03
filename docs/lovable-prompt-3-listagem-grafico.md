@@ -9,7 +9,7 @@ Na tabela "Listagem de Eventos":
 - **Adicionar** uma coluna "Ações" no lugar, com um botão/ícone de **editar** (ícone de lápis)
 - Ao clicar no botão editar, navegar para `/pesquisa?id={pesquisa_id}` — isso abrirá o formulário com os dados preenchidos para edição (o suporte a edição já foi implementado no formulário)
 
-Colunas atualizadas: Evento | Cliente | Filial | Cidade | Porte | Público/dia | PDVs | Terminais | Faturamento | Pesquisador | **Ações**
+Colunas atualizadas: Evento | Cliente | Cidade | Porte | Público/dia | PDVs | Terminais | Faturamento | Pesquisador | **Ações**
 
 ## 2. Gráfico "Matriz por Filial" → "Matriz por Categoria de Eventos"
 

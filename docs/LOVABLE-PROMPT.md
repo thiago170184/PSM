@@ -204,8 +204,8 @@ Média de terminais por categoria por evento (Total terminais da categoria ÷ N�
 - Última coluna "Média Geral" = média total de terminais por evento por categoria de evento
 
 ### Listagem de Eventos (tabela)
-- Colunas: Evento | Cliente | Filial | Cidade | Porte (badge colorido) | Público/dia | PDVs | Terminais | Faturamento | Pesquisador | Ações
-- Badges de porte com cores: PP=cinza, P=ciano, M=amarelo, G=roxo, MEGA=azul
+- Colunas: Evento | Cliente | Cidade | Porte (badge colorido) | Público/dia | PDVs | Terminais | Faturamento | Pesquisador | Ações
+- Badges de porte exibindo apenas as siglas (PP, P, M, G, MEGA) com cores: PP=cinza, P=ciano, M=amarelo, G=roxo, MEGA=azul
 - A coluna **Ações** substitui a antiga coluna "Data". Exibir um botão/ícone de **Editar** (ícone de lápis). Ao clicar, navegar para `/pesquisa?id={pesquisa_id}` — o formulário deve detectar o parâmetro `id` na URL e carregar todos os dados da pesquisa para edição. Ao salvar, fazer UPDATE ao invés de INSERT (usar upsert ou verificar se existe `id` no query param). Também deve atualizar os registros em `pesquisa_pdvs` (deletar os antigos e re-inserir os novos).
 
 ## Design System
