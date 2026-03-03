@@ -13,13 +13,14 @@ Todos os campos de texto que são exibidos no sistema (tanto no formulário quan
 - Local do evento
 - Cidade/UF
 
-**Regra:** Ao salvar no banco (INSERT ou UPDATE) e/ou ao exibir na tela, converter automaticamente para o formato Title Case (primeira letra de cada palavra maiúscula, restante minúscula). Exemplo:
-- "LOLLAPALOOZA 2026" → "Lollapalooza 2026"
-- "são paulo/sp" → "São Paulo/Sp"
-- "carlos silva" → "Carlos Silva"
-- "T4F ENTRETENIMENTO" → "T4f Entretenimento"
+**Regra:** A padronização é feita em duas camadas:
+1. **Banco de dados (trigger):** Já existe um trigger `trg_padronizar_pesquisas` que aplica INITCAP + TRIM automaticamente em todo INSERT/UPDATE. Para o campo cidade, mantém a UF em maiúscula (ex: "São Paulo / SP").
+2. **Frontend (exibição):** Implementar uma função utilitária `toTitleCase(text)` como fallback para exibir os dados já padronizados. Exemplo:
+   - "LOLLAPALOOZA 2026" → "Lollapalooza 2026"
+   - "são paulo / sp" → "São Paulo / SP"
+   - "carlos silva" → "Carlos Silva"
 
-Implementar uma função utilitária `toTitleCase(text)` que converta qualquer texto para este padrão e aplicar em todos os campos de texto livre antes de salvar e ao exibir.
+Aplicar `toTitleCase` nos campos de texto livre ao exibir na dashboard e nas sugestões de autocomplete do formulário.
 
 ## 2. Fonte Titillium Web em todo o sistema
 
