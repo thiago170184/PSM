@@ -27,9 +27,10 @@ cliente: TEXT NOT NULL — nome do cliente
 dias: INTEGER NOT NULL — quantidade de dias
 local_evento: TEXT NOT NULL — local do evento
 cidade: TEXT NOT NULL — cidade/UF
+categoria_evento: TEXT NOT NULL — categoria do evento (Feira, Shows, Rodeios, etc.)
 faturamento: NUMERIC(15,2) NOT NULL — faturamento estimado
 publico: INTEGER NOT NULL — público por dia
-modalidade: TEXT NOT NULL — enum: 'Ficha', 'Cashless', 'Híbrido'
+modalidade: TEXT NOT NULL — enum: 'Ficha', 'Cashless', 'Híbrido', 'Tickets', '360'
 setores: INTEGER NOT NULL — número de setores
 porte: TEXT NOT NULL — calculado: 'PP', 'P', 'M', 'G', 'MEGA'
 total_pdvs: INTEGER NOT NULL — soma dos PDVs
@@ -40,6 +41,7 @@ terminais_misto: INTEGER NOT NULL DEFAULT 0
 terminais_alimentacao: INTEGER NOT NULL DEFAULT 0
 terminais_servicos: INTEGER NOT NULL DEFAULT 0
 terminais_loja: INTEGER NOT NULL DEFAULT 0
+terminais_tickets: INTEGER NOT NULL DEFAULT 0
 created_at: TIMESTAMPTZ DEFAULT NOW()
 ```
 
@@ -56,7 +58,7 @@ created_at: TIMESTAMPTZ DEFAULT NOW()
 ```
 
 ### RLS
-- Ambas tabelas com insert e select público (formulário sem autenticação)
+- Ambas tabelas com insert, select, update e delete público (formulário sem autenticação, suporte a edição)
 
 ## Página 1: Formulário de Pesquisa (`/pesquisa`)
 
@@ -70,15 +72,16 @@ created_at: TIMESTAMPTZ DEFAULT NOW()
 
 ### Seção 2 — Dados Gerais do Evento (todos obrigatórios)
 - Evento (text, full width)
-- Cliente (text)
+- Cliente (text com autocomplete — buscar valores distintos já cadastrados na tabela `pesquisas` coluna `cliente`. Ao digitar, filtrar sugestões. Permitir valores novos.)
 - Quantidade de Dias (number)
-- Local (text)
-- Cidade / UF (text)
+- Local (text com autocomplete — buscar valores distintos já cadastrados na tabela `pesquisas` coluna `local_evento`. Ao digitar, filtrar sugestões. Permitir valores novos.)
+- Cidade / UF (text com autocomplete — buscar valores distintos já cadastrados na tabela `pesquisas` coluna `cidade`. Ao digitar, filtrar sugestões. Permitir valores novos.)
+- Categoria do Evento (select obrigatório): Feira, Eventos esportivos, Shows, Rodeios, Festivais, Gastronômicos, Eventos 24h, Reveillon, Carnaval, Festa Junina
 
 ### Seção 3 — Dados Operacionais (todos obrigatórios)
 - Faturamento Estimado (currency input com máscara R$ 15.000.000,00)
 - Público por Dia (number input com máscara de milhar: 65.000)
-- Modalidade (select): Ficha, Cashless, Híbrido
+- Modalidade (select): Ficha, Cashless, Híbrido, Tickets, 360
 - Setores (number)
 - Exibir badge do Porte calculado automaticamente:
   - PP: até R$ 74.999,99
@@ -96,6 +99,7 @@ Tabela com categorias colapsáveis. Colunas: Categoria | Nome | Cód. | Contexto
 - Caixa Fixo (CF) — Caixa que fica alocado em local fixo
 - Caixa Móvel (CM) — Caixa que usa mochila pirulito e fica móvel
 - Caixa Produção (CP) — Terminal de produção para geração de bônus/cortesias
+- Caixa Auto atendimento (CA) — Caixa de auto atendimento
 
 🍺 **Bebidas**
 - Bar (BB) — Bar geral onde normalmente se vende bebidas em geral
@@ -104,10 +108,12 @@ Tabela com categorias colapsáveis. Colunas: Categoria | Nome | Cód. | Contexto
 - Bar Micro/Mini (BV) — Bar com estrutura menor, normalmente em locais de difícil acesso
 - Caixa Ambulante Bebidas (CB) — Caixas exclusivos da operação de ambulantes de bebida
 - Ambulante de Bebidas (BY) — Ambulantes de bebidas
+- Queima de Ficha (BQ) — Ponto de queima de ficha
 
 🔄 **Operação Mista**
 - Misto (MM) — Bares que também vendem comida. Operações mistas
 - Garçom (MG) — Atendimento presencial onde o profissional leva o produto ao cliente
+- Impressora de pedidos (MI) — Impressora de pedidos para operação mista
 
 🍔 **Alimentação**
 - Alimentação Fixa (AA) — Ponto de alimentação fixa, tendas ou estruturas de octanorm
@@ -121,6 +127,11 @@ Tabela com categorias colapsáveis. Colunas: Categoria | Nome | Cód. | Contexto
 
 🛍️ **Merchandising**
 - Loja (LO) — Loja de souvenir e/ou merchandising do evento, incluindo ambulantes
+
+🎫 **Tickets**
+- Tickets Pré-venda (TP) — Terminais de pré-venda de tickets/ingressos
+- Tickets Bilheteria (TB) — Terminais de bilheteria para venda no local
+- Tickets Validador (TV) — Terminais de validação de tickets/ingressos
 
 ### Validações do Formulário
 1. Todos os campos das seções 1, 2 e 3 são obrigatórios (indicar com asterisco vermelho)
@@ -141,14 +152,17 @@ Tabela com categorias colapsáveis. Colunas: Categoria | Nome | Cód. | Contexto
 ### Header
 - Logo azul + "PDV Analytics" + aba Dashboard + botão "+ Nova Pesquisa" (navega para /pesquisa)
 
-### Filtros (7 filtros em linha)
-- Filial (select, valores dinâmicos do banco)
-- Cliente (select, valores dinâmicos)
-- Local do evento (select, valores dinâmicos)
-- Cidade/UF (select, valores dinâmicos)
-- Modalidade (select: Ficha, Cashless, Híbrido)
-- Porte (select: PP, P, M, G, MEGA)
-- Nome pesquisador (text input)
+### Filtros (8 filtros em linha, todos com multi-seleção)
+Cada filtro deve exibir o nome/label acima do campo (ex: "Filial", "Cliente", etc.). Todos os filtros do tipo select devem suportar **multi-seleção** (o usuário pode selecionar múltiplos valores simultaneamente). Usar componente de multi-select com chips/tags dos valores selecionados.
+
+- Filial (multi-select, valores dinâmicos do banco) — label: "Filial"
+- Cliente (multi-select, valores dinâmicos) — label: "Cliente"
+- Local do evento (multi-select, valores dinâmicos) — label: "Local do evento"
+- Cidade/UF (multi-select, valores dinâmicos) — label: "Cidade/UF"
+- Modalidade (multi-select: Ficha, Cashless, Híbrido, Tickets, 360) — label: "Modalidade"
+- Porte (multi-select: PP, P, M, G, MEGA) — label: "Porte"
+- Categoria do Evento (multi-select: Feira, Eventos esportivos, Shows, Rodeios, Festivais, Gastronômicos, Eventos 24h, Reveillon, Carnaval, Festa Junina) — label: "Categoria"
+- Nome pesquisador (text input) — label: "Pesquisador"
 - Contador de filtros ativos + botão "Limpar filtros"
 - Todos os dados da dashboard reagem aos filtros
 
@@ -159,31 +173,40 @@ Tabela com categorias colapsáveis. Colunas: Categoria | Nome | Cód. | Contexto
 - 🖥️ Média PDVs / evento
 - 👥 Média público / evento
 
-### Índices de Terminais (6 cards)
-Média de terminais por categoria por evento (Total terminais da categoria ÷ Nº de eventos):
+### Índices de Terminais (7 cards)
+Média de terminais por categoria por evento (Total terminais da categoria ÷ Nº de eventos).
+
+**Layout de cada card:**
+- Título do índice (ex: "ITC — Índice Terminais por Caixa") posicionado **acima**, com o ícone/emoji **ao lado** do título (na mesma linha)
+- Valor do indicador **arredondado para cima** (Math.ceil), **sem casas decimais** (ex: 103, não 102.7)
+- Abaixo do indicador principal, exibir uma **sub-métrica** em tamanho menor: resultado de (Média de público por evento ÷ valor do indicador). Ex: se ITC = 103 e média público = 24.191, exibir "235" abaixo (24.191 ÷ 103 = 235, arredondado para cima)
+
+**Cards:**
 - ITC — Índice Terminais por Caixa 💳
 - ITB — Índice Terminais por Bar 🍺
 - ITM — Índice Terminais por Misto 🔄
 - ITA — Índice Terminais por Alimentação 🍔
 - ITS — Índice Terminais por Serviço 🎡
 - ITL — Índice Terminais por Loja 🛍️
+- ITT — Índice Terminais por Tickets 🎫
 
 ### Gráficos (lado a lado)
 
 **Matriz de Terminais** (gráfico de barras horizontais)
 - Média de terminais por categoria
-- Cores por categoria (Caixas=azul, Bebidas=amarelo, Mistos=roxo, Alimentação=verde, Serviços=ciano, Lojas=vermelho)
+- Cores por categoria (Caixas=azul, Bebidas=amarelo, Mistos=roxo, Alimentação=verde, Serviços=ciano, Lojas=vermelho, Tickets=laranja)
 - Exibir valor numérico dentro da barra (branco, bold)
 
-**Matriz por Filial** (tabela)
-- Colunas: Filial | Eventos | 💳Caixas | 🍺Bebidas | 🔄Mistos | 🍔Alimentação | 🎡Serviços | 🛍️Lojas | Média Geral
-- Cada filial com média de terminais por categoria
+**Matriz por Categoria de Eventos** (tabela)
+- Colunas: Categoria do Evento | Eventos | 💳Caixas | 🍺Bebidas | 🔄Mistos | 🍔Alimentação | 🎡Serviços | 🛍️Lojas | 🎫Tickets | Média Geral
+- Cada categoria de evento (Feira, Shows, Rodeios, etc.) com média de terminais por categoria de PDV
 - Última linha "Geral" com média global destacada em azul
-- Última coluna "Média Geral" = média total de terminais por evento por filial
+- Última coluna "Média Geral" = média total de terminais por evento por categoria de evento
 
 ### Listagem de Eventos (tabela)
-- Colunas: Evento | Cliente | Filial | Cidade | Porte (badge colorido) | Público/dia | PDVs | Terminais | Faturamento | Pesquisador | Data
+- Colunas: Evento | Cliente | Filial | Cidade | Porte (badge colorido) | Público/dia | PDVs | Terminais | Faturamento | Pesquisador | Ações
 - Badges de porte com cores: PP=cinza, P=ciano, M=amarelo, G=roxo, MEGA=azul
+- A coluna **Ações** substitui a antiga coluna "Data". Exibir um botão/ícone de **Editar** (ícone de lápis). Ao clicar, navegar para `/pesquisa?id={pesquisa_id}` — o formulário deve detectar o parâmetro `id` na URL e carregar todos os dados da pesquisa para edição. Ao salvar, fazer UPDATE ao invés de INSERT (usar upsert ou verificar se existe `id` no query param). Também deve atualizar os registros em `pesquisa_pdvs` (deletar os antigos e re-inserir os novos).
 
 ## Design System
 
